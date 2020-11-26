@@ -1,0 +1,87 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warnings=FALSE)
+library(tidyverse)
+library(lubridate)
+source("../../scripts/viridis.R")
+source("../../scripts/ggprob.R")
+```
+
+
+```{r data-import}
+data <- read_csv("county_statistics 2.csv")
+absentee <- read_csv("AbsenteeCounts_County 11-6-2020.csv")
+
+absentee <- absentee %>% 
+  mutate(county = str_to_title(str_replace(Jurisdiction, " COUNTY", "")))
+
+wi_data <- data %>%
+  filter(state == "WI") %>% 
+  left_join(absentee) %>% 
+  mutate(cases_capita = cases / TotalPop,
+         pct_absentee = BallotsReturned / VotingAgeCitizen * 100) %>% 
+  drop_na()
+```
+
+```{r functions}
+lm_eqn <- function(df, x, y){
+    m <- lm(y ~ x, df);
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+}
+```
+
+
+```{r}
+ggplot(wi_data, mapping = aes(x = percentage16_Donald_Trump, y = percentage20_Donald_Trump)) +
+  geom_point(aes(size = VotingAgeCitizen)) +
+  geom_smooth(method = lm, se = FALSE) +
+  labs(
+    title = "Percent Republican Vote 2016 vs 2020",
+    x = "Percent Republican Votes 2016",
+    y = "Percent Republican Votes 2020",
+    size = "Num. Eligible Voters" 
+  )
+```
+
+```{r}
+ggplot(wi_data, mapping = aes(x = pct_absentee, y = percentage20_Donald_Trump)) +
+  geom_point(aes(size = VotingAgeCitizen)) +
+  geom_smooth(method = lm, se = FALSE) +
+  geom_text(
+    x = 20,
+    y = 0.3,
+    label = corr_eqn(wi_data$pct_absentee,
+                     wi_data$percentage20_Donald_Trump),
+    parse = TRUE) +
+  labs(
+    title = "Percent Republican Vote 2020 vs Absentee Vote",
+    x = "Percent Absentee Vote",
+    y = "Percent Republican Votes 2020",
+    size = "Num. Eligible Voters" 
+  )
+```
+
+```{r}
+wi_data %>%
+  ggplot(mapping = aes(x = cases_capita, y = percentage20_Donald_Trump)) +
+    geom_point()
+```
+
+```{r}
+wi_data %>%
+  ggplot(mapping = aes(x = TotalPop, y =percentage20_Donald_Trump)) +
+    geom_point()
+```
+
+```{r}
+lm(percentage20_Donald_Trump ~ pct_absentee, wi_data)
+```
+
+

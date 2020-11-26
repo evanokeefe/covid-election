@@ -1,13 +1,4 @@
----
-title: "315C-Project-Proposal"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-#
+# Analyzing the Impact of the COVID-19 Pandemic on Methods of Voting Within Wisconsin
 
 #### Names:
 
@@ -32,4 +23,3 @@ Evan O'Keefe, Jim Lee, Kevin Joseph, Peter Kennedy
 - Split the state data into Repub. or Dem. data by which candidate the county favored
 - Use mostly scatter plots to compare the data
 - Line plot showing cases before and after significant electoral events
-
