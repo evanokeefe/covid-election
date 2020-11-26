@@ -7,8 +7,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#
-
 #### Names:
 
 Evan O'Keefe, Jim Lee, Kevin Joseph, Peter Kennedy
