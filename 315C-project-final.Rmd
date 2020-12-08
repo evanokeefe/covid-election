@@ -1,5 +1,7 @@
 ---
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 # An Election Year  During A Politicized Global Pandemic
 
