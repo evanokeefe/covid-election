@@ -1,11 +1,13 @@
 ---
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 # An Election Year  During A Politicized Global Pandemic
 
-**Kevin Joseph, Jim Lee, Peter Kennedy, Evan O'Keefe**
+**Group 315C**
+
+Kevin Joseph, Jim Lee, Peter Kennedy, Evan O'Keefe
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message=FALSE, warnings=FALSE)
@@ -32,7 +34,9 @@ absentee <- absentee_20 %>%
 wi_data <- data %>%
   filter(state == "WI") %>% 
   left_join(absentee) %>% 
-  mutate(cases_thou = cases / TotalPop * 100000,
+  mutate(maj_party_16 = ifelse(votes16_Donald_Trump > votes16_Hillary_Clinton, "Rep.", "Dem."),
+         maj_party_20 = ifelse(votes20_Donald_Trump > votes20_Joe_Biden, "Rep.", "Dem."),
+         cases_thou = cases / TotalPop * 100000,
          deaths_thou = deaths / TotalPop * 100000,
          pct_absentee_16 = returned_16 / total_votes16 * 100,
          pct_absentee_20 = returned_20 / total_votes20 * 100,
@@ -54,16 +58,28 @@ corr_coef <- function(x, y) {
 
 ### Introduction
 
-2020 has been far from a normal year and two main focuses within the United States were the Coronavirus Pandemic and the Presidential Election between incumbent Republican Donald Trump and Democratic Candiate Joe Biden. The goal of our group was to analyze how these two major events impacted each other specifically in the state of Wisconsin by observing a few different factors. A key aspect that we plan to observe is the impact of increased mail-in/absentee voting. To achieve this analysis, data was collected describing Wisconsin election data (including vote totals and absentee ballot data), COVID-19 cases data (including number of cases and deaths), and general census information. This project will test the hypothesis that conservative areas of Wisconsin will have higher COVID-19 infection rates and lower absentee voting due to the general rhetoric and actions of the American Republican Party.
+2020 has been far from a normal year and two main focuses within the United States were the Coronavirus Pandemic and the Presidential Election between incumbent Republican Donald Trump and Democratic Candidate Joe Biden. The goal of our group was to analyze how these two major events impacted each other specifically in the state of Wisconsin by observing a few different factors. A key aspect that we plan to observe is the impact of increased mail-in/absentee voting. To achieve this analysis, data was collected describing Wisconsin election data (including vote totals and absentee ballot data), COVID-19 cases data (including number of cases and deaths), and general census information. Using this data we hoped to answer the following questions:
+
+1. How has the COVID-19 pandemic impacted how people vote in the 2020 presidential election?
+2. Is there a correlation between the majority political party and the pandemic impact?
+3. Are there any demographics that are impacted more signifcanly than others?
+
+This project will test the hypothesis that conservative areas of Wisconsin will have higher COVID-19 infection rates and lower absentee voting due to the general rhetoric and actions of the American Republican Party.
 
 ### Background
 
-The datasets collected for this project contained many useful population observations; however, do to the  scope of this project only a select few were used. These variables are described below:
+> About the Data
+
+Our main dataset was connected from the internet using Kaggle^[https://www.kaggle.com/etsc9287/2020-general-election-polls]. It is a compilation of data on both the 2016 and 2020 Presidential Elections, the ongoing COVID-19 Pandemic, and key population demographics. The data is only from the United States and is sorted based on county and state. There are many variables in the data set, including many that we do not need. Due to the scope of the project only variables relating to the 2020 election and the pandemic and those used for other references were selected. We did not utilize the majority of the demographic variables; however, those presenting interesting trends such as Unemployment were included. 
+
+Besides direct pandemic impact (through  number  of cases and deaths) and the election results, our group sought to analyze the change in how people vote  as a result of the public health crisis. To analyze  this change, we chose to focus on the  differences in absentee/main-in voting. Since our main dataset did not include this information, auxiliary datasets were obtained from the Wisconsin Election Comission The comission releases information after each election detailing the number of absentee ballots sent and recieved in each county (2016^[https://elections.wi.gov/node/4414] and 2020^[https://elections.wi.gov/node/7236]).
+
+To make the data more comparable between counties, we had to manipulate variables such as number of COVID cases to standardize to the population. This allowed us to reasonably compare counties which have population ranging from 4,000 to just under 1,000,000. For our analysis, we filtered the data to only include counties in Wisconsin. The main variables we used are described below based on their dataset of origin:
 
 **County Statistics Dataset**
 
 1. County: (str) Name of the county for which the data  was  collected.
-2. State: (str) Two leter intials for each  US state. Only data from Wisconsin (WI) was used in this project.
+2. State: (str) Two letter intials for each  US state. Only data from Wisconsin (WI) was used in this project.
 3. percentage16_Donald_Trump: (float) Percent of the county vote for Donald Trump in the given election cycle. Given in the decimal form, maximum values of 1.
 4. percentage16_Hillary_Clinton: (float) Percent of the county vote for Hillary Clinton in the given year. Given in the decimal form, maximum values of 1.
 5. total_votes16: (int) Total number of county votes for the given election cycle. Includes democratic, republican, and any third party votes.
@@ -92,41 +108,63 @@ The datasets collected for this project contained many useful population observa
 
 **Calculated Values**
 
-22. cases_thou: (int) Number of COVID-19 cases in the given county, standardized to the county population.
-23. deaths_thou: (int) Number of COVID-19 deaths in the given county, standardized to the county population.
-24. pct_absentee_16: (float) Percent of the county votes that come from absentee/mail-in ballots for  the  given election cycle. Given in the percent form, maximum values of 100.
-25. pct_absentee_20 = Same as *pct_absentee_16*
-26. pct_absentee_diff: (float) Percentage change of absentee votes from 2016 to 2020. Given in the percent form, no maximum value.
-27. third_party_16: (int) Number of votes cast for the third part canidate in the given election cycle.
-28. third_party_20: Same as *third_party_16*
-29. win_margin_16: (int) Difference in number of votes between the winning canidate and the  losing.
-30. win_margin_20: Same as *win_margin_16*
+22. maj_party_16: (str) The party that had the majority of the vote in the given election cycle.
+23. maj_party_20: Same as *maj_party_16*
+24. cases_thou: (int) Number of COVID-19 cases in the given county, standardized to the county population.
+25. deaths_thou: (int) Number of COVID-19 deaths in the given county, standardized to the county population.
+26. pct_absentee_16: (float) Percent of the county votes that come from absentee/mail-in ballots for  the  given election cycle. Given in the percent form, maximum values of 100.
+27. pct_absentee_20 = Same as *pct_absentee_16*
+28. pct_absentee_diff: (float) Percentage change of absentee votes from 2016 to 2020. Given in the percent form, no maximum value.
+29. third_party_16: (int) Number of votes cast for the third part canidate in the given election cycle.
+30. third_party_20: Same as *third_party_16*
+31. win_margin_16: (int) Difference in number of votes between the winning canidate and the  losing.
+32. win_margin_20: Same as *win_margin_16*
+
+> Unusual Factors Present
+
+There discrepancies within the data that had to be considered before analyzing the data. Initially, between the datasets the Counties had different naming formats. This issue was resolved through some data processing before joining the datasets. It is also necessary to note that the COVID data presented is from November 1st, so it does no represent cases that have occurred in the last month. Additionally, a majority of the demographic data was collected in 2017, so it is not completely up to date. Most of this was data we did not plan to use anyways. Finally, when looking at the COVID cases and deaths in each county it is not made explicitly clear whether cases are assigned to the county they live in or the county they are tested in. 
+
+> Project Goal
+
+To observe what correlations, if any, exist between election data, pandemic impact, and general demographics at the county level in Wisconsin. Additionally, some general election data will be analyzed to compare the results of the 2020 Presidential Election to the 2016 election.
+
+### Analysis
+
+> Initially, we wanted to look if there was any significant change in how Wisconsin counties voted in the 2020 Presidential Election from the 2016 Election. For this analysis we plotted the proportion of Republican votes in 2020 vs those in 2016 for each county and calculated the line of best fit.
 
 ```{r repub-voter-corr, echo=FALSE}
 ggplot(wi_data, aes(percentage16_Donald_Trump, percentage20_Donald_Trump)) +
   geom_point(aes(size = VotingAgeCitizen)) +
   geom_smooth(method = lm, se = FALSE) +
   labs(
-    title = "Percent Republican Vote 2016 vs 2020",
+    title = "Proportion Republican Vote 2016 vs 2020",
     subtitle = corr_coef(wi_data$percentage16_Donald_Trump, wi_data$percentage20_Donald_Trump),
-    x = "Percent Republican Votes 2016",
-    y = "Percent Republican Votes 2020",
+    x = "Proportion Republican Votes 2016",
+    y = "Proportion Republican Votes 2020",
     size = "Num. Eligible Voters" 
   )
 ```
+
+This data was highly correlated (R = 0.99), showing that counties did not have any significant change in the portion of voters who vote Republican.
+
+> To observe if there was a signifcant difference in how people voted (in-person vs mail-in) bases on county majority political party, we plotted the proportion of Democratic vote against the mail-in percent of the total vote.
 
 ```{r dem-absentee-corr, echo=FALSE}
 ggplot(wi_data, mapping = aes(pct_absentee_20, percentage20_Joe_Biden)) +
   geom_point(aes(size = VotingAgeCitizen)) +
   geom_smooth(method = lm, se = FALSE) +
   labs(
-    title = "Percent Democratic Vote 2020 vs Absentee Vote",
+    title = "Proportion Democratic Vote 2020 vs Absentee Vote",
     subtitle = corr_coef(wi_data$pct_absentee_20, wi_data$percentage20_Joe_Biden),
     x = "Percent Absentee Vote",
-    y = "Percent Democratic Votes 2020",
+    y = "Proportion Democratic Votes 2020",
     size = "Num. Eligible Voters" 
   )
 ```
+
+This data was somewhat correlated (R = 0.47); however, it is interesting to note that Wisconsin's two most populous counties, Milwaukee and Dane, are in the top values for both proportion democratic vote and percent absentee vote.
+
+> To observe if there was a signifcant difference in the number of COVID-19 cases in a county based on the majority political party, we plotted the proportion of Democratic vote against the number of cases per hundred thousand.
 
 ```{r dem-cases-corr, echo=FALSE}
 ggplot(wi_data, aes(percentage20_Joe_Biden, cases_thou)) +
@@ -141,6 +179,10 @@ ggplot(wi_data, aes(percentage20_Joe_Biden, cases_thou)) +
   )
 ```
 
+We found essentially no correlation in this data (R = -0.01) showing the party a county votes for does not impact how many people are infected with COVID-19.
+
+> To observe this question from another perspective, we plotted the proportion of Democratic vote against the number of COVID-19 deaths per hundred thousand.
+
 ```{r dem-deaths-corr, echo=FALSE}
 ggplot(wi_data, aes(percentage20_Joe_Biden, deaths_thou)) +
   geom_point(aes(size = VotingAgeCitizen)) +
@@ -153,6 +195,36 @@ ggplot(wi_data, aes(percentage20_Joe_Biden, deaths_thou)) +
     size = "Num. Eligible Voters" 
   )
 ```
+
+Contrary to the previous result there was some correlation between the number of deaths in a county and the majority party (R = -0.31)
+
+> Finally to analyze further the data was split by majority political party and separate COVID-19 cases vs death plots were constructed.
+
+```{r cases-deaths-corr, echo=FALSE}
+ggplot(wi_data, aes(cases_thou, deaths_thou)) +
+  geom_point(aes(size = VotingAgeCitizen)) +
+  facet_wrap(~maj_party_20) +
+  geom_smooth(method = lm, se = FALSE) +
+  labs(
+    title = "COVID-19 Cases vs Deaths by Majority Party",
+    x = "COVID-19 Cases per 100,000",
+    y = "COVID-19 Deaths per 100,000",
+    size = "Num. Eligible Voters"
+  )
+
+dem_data <- wi_data %>%
+  filter(maj_party_20 == "Dem.")
+
+rep_data <- wi_data %>%
+  filter(maj_party_20 == "Rep.") 
+
+str_c("Dememoratic ", corr_coef(dem_data$cases_thou, dem_data$deaths_thou))
+str_c("Republican ", corr_coef(rep_data$cases_thou, rep_data$deaths_thou))
+```
+
+The appears to be a major difference in correlation between the split data (R = 0.1 vs R = 0.51). However, the outlier of Menominee County with over 7,500 cases per 100,000 and 0 deaths may be a significant contributing factor in this.
+
+> To observe if there was a unemployment had an impact on the number of COVID-19 cases in a county, we plotted the unemployment percentage against the number of cases per hundred thousand.
 
 ```{r unemploy-cases-corr, echo=FALSE}
 ggplot(wi_data, aes(Unemployment, cases_thou)) +
@@ -167,6 +239,10 @@ ggplot(wi_data, aes(Unemployment, cases_thou)) +
   )
 ```
 
+There was not a very large correlation between these factors (R = 0.15).
+
+> Again for further analysis, we switchined cases for deaths and plotted the unemployment percentage against the number of deaths per hundred thousand.
+
 ```{r unemploy-deaths-corr, echo=FALSE}
 ggplot(wi_data, aes(Unemployment, deaths_thou)) +
   geom_point(aes(size = TotalPop)) +
@@ -179,6 +255,10 @@ ggplot(wi_data, aes(Unemployment, deaths_thou)) +
     size = "County Population" 
   )
 ```
+
+This yielded a slightly higher correlation (R = 0.3) but is still not very significant.
+
+> To observe if there was a correlation between increase in absentee voting this year vs 2016 and pandemic impact, we plotted the percent change in absentee voting against the number of COVID-19 cases per 100,000.
 
 ```{r absentee-cases-corr, echo=FALSE}
 no_sauk <- wi_data %>% 
@@ -197,6 +277,8 @@ ggplot(no_sauk, aes(pct_absentee_diff, cases_thou)) +
   )
 ```
 
+There was a very low correlation between for this comparison (R = -0.26). However, the only county to decrease in absentee votes, Shawano County, had one of the highest values for cases per hundred thousand. Additionally, Sauk County was not included as it has an increase in absentee voting of over 1000% but only a marginal impact on correlation.
+
 ```{r vote-total-calc, include=FALSE}
 wi_data %>% 
   summarize(
@@ -212,6 +294,8 @@ value <- c(2893526, 820666, 3239923, 1929743)
 votes <- data.frame(year, meas, value)
 ```
 
+> For a general overview, we wanted to look at trends in total vote count and number of absentee votes.
+
 ```{r vote-total-bar, echo=FALSE}
 ggplot(votes, aes(year, value/100000, fill = meas)) +
   geom_bar(position = "dodge", stat = "identity") +
@@ -223,6 +307,49 @@ ggplot(votes, aes(year, value/100000, fill = meas)) +
     fill = ""
   )
 ```
+
+It can be seen that there was a significant increase in the absentee vote count and a marginal increase in total vote counts.
+
+```{r margin-pct-calc, include=FALSE}
+wi_data %>% 
+  summarize(
+    votes16 = sum(total_votes16),
+    abs_16 = sum(returned_16),
+    votes20 = sum(total_votes20),
+    abs_20 = sum(returned_20)
+  )
+
+year <- c(rep("2016", 2), rep("2020", 2))
+meas <- rep(c("Total Votes", "Margin"), 2)
+value <- c(sum(wi_data$total_votes16),
+           sum(wi_data$win_margin_16),
+           sum(wi_data$total_votes20),
+           sum(wi_data$win_margin_20)
+           )
+pct <- data.frame(year, meas, value)
+```
+
+> Given that Wisconsin is always considered a swing state (is only won by either party each year by a slim margin), we wanted to analyze how close the last two elections were. In order to do this analysis, we plotted a stacked bar of the 
+
+```{r margin-pct-bar, echo=FALSE}
+ggplot(pct, aes(year, value, fill = meas)) +
+  geom_bar(position = "fill", stat = "identity") +
+  scale_fill_viridis_d(option = 'cividis') +
+  labs(
+    title = "Winning  Margin vs Total Number of Votes",
+    x = "Election Year",
+    y = "Portion of Total Vote",
+    fill = ""
+  )
+
+win_pct_16 <- round(sum(wi_data$win_margin_16) / sum(wi_data$total_votes16), 4) * 100
+win_pct_20 <- round(sum(wi_data$win_margin_20) / sum(wi_data$total_votes20), 4) * 100
+
+str_c("Margin of Victory 2016 ", win_pct_16, "%")
+str_c("Margin of Victory 2020 ", win_pct_20, "%")
+```
+
+This graph shows just how close elections are in Wisconsin, showing it is a swing state.
 
 ```{r third-party-calc, include=FALSE}
 wi_data %>% 
@@ -239,6 +366,8 @@ value <- c(13604, 150284, 35712, 55573)
 third_party <- data.frame(year, meas, value)
 ```
 
+> With the current voting system in Wisconsin, third party canidates can be spoilers (take a winning majority of voters away from a canaditate with a similar platform). To see this effect, we plotted the total number of third party votes and winning margin for 2016 and 2020. 
+
 ```{r third-party-bar, echo=FALSE}
 ggplot(third_party, aes(year, value/1000, fill = meas)) +
   geom_bar(position = "dodge", stat = "identity") +
@@ -251,5 +380,5 @@ ggplot(third_party, aes(year, value/1000, fill = meas)) +
   )
 ```
 
-
+This graph shows how the third party vote played a much larger role in the 2016 election than the 2020, with a much higher number of votes and much slimmer margin. This spoiler effect could be further analyzed by breaking the third party vote into their respective candidates to see which way third party voters may have leaned in this election. (Traditional sides of the third parties:Green party -> Democratic leaning, Libertarian party -> Republican leaning)
 
